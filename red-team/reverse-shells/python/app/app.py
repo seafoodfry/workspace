@@ -17,7 +17,7 @@ def code_injection():
     app.logger.info(request.form)
     fname = request.form["firstname"]
     lname = request.form["lastname"]
-    # The commented out version is vulnerable to command injections.
+    # The not-commented out version is not vulnerable to command injections.
     result = subprocess.run([f"./some-cli {fname} {lname}"], stdout=subprocess.PIPE, shell=True)
     #result = subprocess.run(["./some-cli", f"{fname} {lname}"], stdout=subprocess.PIPE)
     if result.returncode != 0:
