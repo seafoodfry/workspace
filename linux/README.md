@@ -107,6 +107,74 @@ If that still results in some xauth-related warning, then take a look at the tip
 #!/bin/bash
 set -x
 sudo apt-get update -y
-sudo apt-get install qemu qemu-kvm virt-manager virt-viewer -y
+sudo apt-get install qemu-system-x86 -y
 sudo apt-get install build-essential cmake lld nasm -y
 ```
+
+## The Boot Loader
+
+To begin with out setup, let's write a simple boot loader.
+This thing will be loaded by a BIOS because we will write a disk sector with a magic number (telling the BIOS to loaded it up).
+The magic number is `0xaa55` and a sector is 512 bytes long, or at least that was the convention when 32 bits system were more popular.
+The convention is that this amgic number needs to be in the last 2 bytes of the 512 bytes-long sector.
+
+### Intel
+
+Using intel assembly syntax (we will use the netwide assembler), we can do the following
+```nasm
+; An infinite loop to keep the system up.
+loop:
+    jmp loop
+
+; A bunch of zeros to align the magic number to the end of a 512 byte long sector.
+times 510-($-$$) db 0
+
+; Finally, the magic number.
+dw 0xaa55
+```
+
+To make sense of this example keep in mind that
+- Hex numbers go from 0 to 15 so you need a byte for each hex number.
+- The magic number is already claiming 2 bytes at the end of the 512 bytes-long secotr (510 bytes remaining).
+- A word is 2 bytes long, so `dw` (define word) can take the magic number as input
+    - The BIOS runs in 16-bit real mode, this also what computers were using back in the day (16 bits == 2 bytes == 1 word).
+- `times` is a utility offered by nasm to mean that the given instruction must be assembled a given ammount of times (`times <number-of-times> <instruction>`).
+    - `$` evaluates to the assembly position at the beginning of the line containing the expression.
+    - `$$` evaluates to the beginning of the current section.
+    - `db` defines a byte
+
+Now assemble and boot it up
+```
+nasm boot_loader.asm -f bin -o boot_loader.bin
+qemu-system-i386 boot_loader.bin
+```
+
+You should see a black screen telling you that it booted from the hard disk.
+
+### ATT
+
+Now in ATT syntax and with GAS
+```gas
+# An infinite loop to keep the system up.
+init:
+  jmp init
+
+# A bunch of zeros to align the magic number to the end of a 512 byte long sector.
+.fill 510-(.-init), 1, 0
+
+# Finally, the magic number.
+.word 0xaa55
+```
+
+And to but it up
+```
+as -o boot.o boot.s
+ld -o boot.bin --oformat=binary boot.o
+qemu-system-i386 boot.bin
+```
+
+### References
+
+- [Writing an x86 "Hello world" bootloader with assembly](https://50linesofco.de/post/2018-02-28-writing-an-x86-hello-world-bootloader-with-assembly)
+- [x86 Assembly Language Programming](https://cs.lmu.edu/~ray/notes/x86assembly/)
+- [NASM: Assembly - Basic Syntax](https://www.tutorialspoint.com/assembly_programming/assembly_basic_syntax.htm)
