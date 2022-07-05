@@ -1,0 +1,6 @@
+*.swp
+
+.terraform
+.terraform.lock.hcl
+terraform.tfstate*
+*.plan
