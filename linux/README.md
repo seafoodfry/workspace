@@ -118,6 +118,14 @@ This thing will be loaded by a BIOS because we will write a disk sector with a m
 The magic number is `0xaa55` and a sector is 512 bytes long, or at least that was the convention when 32 bits system were more popular.
 The convention is that this amgic number needs to be in the last 2 bytes of the 512 bytes-long sector.
 
+**Words, Bytes, and Hec**
+A bit of convention.
+A byte has 2^8 possible values.
+In hex, this means that we can use two hex digits to represent a byte (2^8 = 256 = 16 * 16 = 2^4 * 2^4).
+A lot of confusion will then arrive due to how long a word is, this depends on the computer architecture.
+Nowadays, everything is 64-bit, so a word is more commonly 4 bytes (8 hex digits).
+In the older days, with 16-bit architectures being common and 32-bit architectures being a huge thing, a word used to be 2 bytes.
+
 ### Intel
 
 Using intel assembly syntax (we will use the netwide assembler), we can do the following
@@ -172,6 +180,9 @@ as -o boot.o boot.s
 ld -o boot.bin --oformat=binary boot.o
 qemu-system-i386 boot.bin
 ```
+
+Bit of explanation on the syntax
+- `.fill` is a preprocessor directive available in gas (GNU as) whose arguments are "count, size, value" (size in bytes).
 
 ### References
 
